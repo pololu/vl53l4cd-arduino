@@ -230,7 +230,7 @@ void VL53L4CD::writeReg32Bit(uint16_t reg, uint32_t value)
 }
 
 // Read an 8-bit register
-uint8_t VL53L4CD::readReg(regAddr reg)
+uint8_t VL53L4CD::readReg(uint16_t reg)
 {
   uint8_t value;
 
@@ -425,7 +425,7 @@ void VL53L4CD::startContinuous()
 // based on VL53L4CD_StopRanging()
 void VL53L4CD::stopContinuous()
 {
-  writeReg(SYSTEM_START, 0x00);
+  writeReg(SYSTEM_START, 0x80);
 }
 
 // Returns a range reading in millimeters when continuous mode is active. If
