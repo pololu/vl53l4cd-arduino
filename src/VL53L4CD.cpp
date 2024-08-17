@@ -65,7 +65,7 @@ bool VL53L4CD::init(bool io_2v8, bool fast_mode_plus)
   // copied verbatim and refer to ULD functions), but starting at 0x30 instead
   // of 0x2D since we handle the first 3 regs above based on this function's
   // args
-  static const uint8_t VL53L4CD_DEFAULT_CONFIGURATION[] = {
+  static const uint8_t VL53L4CD_DEFAULT_CONFIGURATION[] PROGMEM = {
     0x11, /* 0x30 : set bit 4 to 0 for active high interrupt and 1 for active low
     (bits 3:0 must be 0x1), use SetInterruptPolarity() */
     0x02, /* 0x31 : bit 1 = interrupt depending on the polarity,
@@ -168,7 +168,7 @@ bool VL53L4CD::init(bool io_2v8, bool fast_mode_plus)
 
   for (uint8_t reg = 0x30; reg <= 0x87; reg++)
   {
-    writeReg(reg, VL53L4CD_DEFAULT_CONFIGURATION[reg - 0x30]);
+    writeReg(reg, pgm_read_byte(VL53L4CD_DEFAULT_CONFIGURATION + reg - 0x30));
   }
 
   // "Start VHV"
