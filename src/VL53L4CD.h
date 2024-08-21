@@ -46,11 +46,12 @@ class VL53L4CD
     {
       uint16_t range_mm;
       uint8_t range_status;
-      uint16_t number_of_spad;
+      uint8_t number_of_spad;
       uint16_t signal_rate_kcps;
       uint16_t ambient_rate_kcps;
       uint16_t signal_per_spad_kcps;
       uint16_t ambient_per_spad_kcps;
+      uint16_t sigma_mm;
     };
 
     RangingData ranging_data;

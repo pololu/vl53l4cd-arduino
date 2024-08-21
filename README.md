@@ -71,7 +71,7 @@ Most of the functionality of this library is based on the [VL53L4CD Ultra Lite D
     Range reading from the last measurement, in millimeters. (This reading can also be obtained as the return value of `read()`.)
   * `uint8_t range_status`<br>
     Status of the last measurement; see the API user manual UM2931 for descriptions of the possible statuses. A status of 0 means there were no problems with the measurement.
-  * `uint16_t number_of_spad`<br>
+  * `uint8_t number_of_spad`<br>
     The number of SPADs (single photon avalanche diodes) enabled for the last measurement. More SPADs will be activated for sensing distant and less reflective targets.
   * `uint16_t signal_rate_kcps`<br>
     Quantity of photons measured during the last measurement, in units of kilo counts per second.
@@ -81,6 +81,8 @@ Most of the functionality of this library is based on the [VL53L4CD Ultra Lite D
     Signal rate divided by number of SPADs.
   * `uint16_t ambient_per_spad_kcps`<br>
     Ambient rate divided by number of SPADs.
+  * `uint16_t sigma_mm`<br>
+    An estimate of the noise (standard deviation) in the last range measurement.
 
 * `uint8_t last_status`<br>
   The status of the last I&sup2;C write transmission. See the [`Wire.endTransmission()` documentation](http://arduino.cc/en/Reference/WireEndTransmission) for return values.
@@ -95,7 +97,7 @@ Most of the functionality of this library is based on the [VL53L4CD Ultra Lite D
   Returns a pointer to the I&sup2;C bus this object is using.
 
 * `void setAddress(uint8_t new_addr)`<br>
-  Changes the I&sup2;C slave device address of the VL53L4CD to the given value (7-bit).
+  Changes the I&sup2;C target device address of the VL53L4CD to the given value (7-bit).
 
 * `uint8_t getAddress()`<br>
   Returns the current I&sup2;C address.
@@ -168,4 +170,4 @@ Most of the functionality of this library is based on the [VL53L4CD Ultra Lite D
 
 ## Version history
 
-* 1.0.0 (2024-08-19): Original release.
+* 1.0.0 (2024-08-20): Original release.

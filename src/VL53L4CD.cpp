@@ -166,9 +166,22 @@ bool VL53L4CD::init(bool io_2v8, bool fast_mode_plus)
       put 0x40 in location 0x87 */
   };
 
-  for (uint8_t reg = 0x30; reg <= 0x87; reg++)
+  // Load the rest of the default config (0x30-0x87) with a few block writes.
+  // The Wire library for AVR uses a 32-byte tx buffer, and 2 bytes are needed
+  // for the starting register address of each write, so we can write 30
+  // registers at a time.
+  const uint8_t block_size = 30;
+  for (uint8_t start_reg = 0x30; start_reg <= 0x87; start_reg += block_size)
   {
-    writeReg(reg, pgm_read_byte(VL53L4CD_DEFAULT_CONFIGURATION + reg - 0x30));
+    bus->beginTransmission(address);
+    bus->write(0);    // reg high byte
+    bus->write(start_reg); // reg low byte
+    for (uint8_t reg = start_reg; (reg < start_reg + block_size) && (reg <= 0x87); reg++)
+    {
+      bus->write(pgm_read_byte(VL53L4CD_DEFAULT_CONFIGURATION + reg - 0x30));
+    }
+    last_status = bus->endTransmission();
+    if (last_status) { return false; }
   }
 
   // "Start VHV"
@@ -472,14 +485,33 @@ void VL53L4CD::readResults()
     0, 255, 255, 9, 13, 255, 255, 255, 255, 10, 6,
     255, 255, 11, 12 };
 
-  uint8_t status = readReg(RESULT__RANGE_STATUS) & 0x1F;
+  // Block read 15 bytes from 0x89 (RESULT__RANGE_STATUS) to 0x97 (lower byte of
+  // RESULT_DISTANCE). This is faster than reading each register individually.
+
+  bus->beginTransmission(address);
+  bus->write((uint8_t)(RESULT__RANGE_STATUS >> 8)); // reg high byte
+  bus->write((uint8_t)(RESULT__RANGE_STATUS));      // reg low byte
+  last_status = bus->endTransmission();
+
+  bus->requestFrom(address, (uint8_t)15);
+
+  uint8_t buffer[15];
+  for (uint8_t i = 0; i < 15; i++)
+  {
+    buffer[i] = bus->read();
+  }
+
+  uint8_t status = buffer[0] & 0x1F; // 0x89
   if (status < 24) { status = status_rtn[status]; }
   ranging_data.range_status = status;
 
-  ranging_data.number_of_spad = readReg16Bit(RESULT__SPAD_NB) / 256;
-  ranging_data.signal_rate_kcps = readReg16Bit(RESULT__SIGNAL_RATE) * 8;
-  ranging_data.ambient_rate_kcps = readReg16Bit(RESULT__AMBIENT_RATE) * 8;
-  ranging_data.range_mm = readReg16Bit(RESULT__DISTANCE);
+  // The ULD reads RESULT__SPAD_NB as a 16-bit reg but then divides the value by
+  // 256, so we can just ignore the lower byte entirely.
+  ranging_data.number_of_spad = buffer[3]; // 0x8C
+  ranging_data.signal_rate_kcps = ((uint16_t)buffer[5] << 8 | buffer[6]) * 8; // 0x8E, 0x8F
+  ranging_data.ambient_rate_kcps = ((uint16_t)buffer[7] << 8 | buffer[8]) * 8; // 0x90, 0x91
+  ranging_data.sigma_mm = ((uint16_t)buffer[9] << 8 | buffer[10]) / 4; // 0x92, 0x93
+  ranging_data.range_mm = (uint16_t)buffer[13] << 8 | buffer[14]; // 0x96, 0x97
 
   ranging_data.signal_per_spad_kcps =  ranging_data.signal_rate_kcps / ranging_data.number_of_spad;
   ranging_data.ambient_per_spad_kcps =  ranging_data.ambient_rate_kcps / ranging_data.number_of_spad;
